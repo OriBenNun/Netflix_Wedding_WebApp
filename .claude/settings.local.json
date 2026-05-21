@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp \"C:/Users/Bman/.claude/projects/D--Dev-Netflix-Wedding-App-Netflix-Wedding-WebApp/04c5f25f-20ec-4d51-92e1-a23fea781567/tool-results/webfetch-1779374026098-ekr4gp.bin\" /tmp/wedflix.gz)",
+      "Bash(gunzip -c /tmp/wedflix.gz)",
+      "Read(//tmp/**)",
+      "Read(//d/tmp/**)",
+      "Bash(mkdir -p wedflix-bundle)",
+      "Bash(tar -xf wedflix.gz -C wedflix-bundle)",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/Wedflix.html \"D:/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/Wedflix.html\")",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/data.js \"D:/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/data.js\")",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/styles.css \"D:/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/styles.css\")",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/components.jsx \"D:/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/components.jsx\")",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/screens.jsx \"D:/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/screens.jsx\")",
+      "Bash(mkdir -p _design)",
+      "Bash(mv Wedflix.html app.jsx components.jsx data.js screens.jsx styles.css tweaks-panel.jsx _design/)",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/Wedflix.html /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/Wedflix.html)",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/data.js /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/data.js)",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/styles.css /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/styles.css)",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/components.jsx /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/components.jsx)",
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/screens.jsx /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/screens.jsx)"
+    ]
+  }
+}
