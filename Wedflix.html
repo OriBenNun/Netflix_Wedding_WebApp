@@ -17,9 +17,1224 @@
 <div id="root"></div>
 
 <script src="data.js"></script>
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="components.jsx"></script>
-<script type="text/babel" src="screens.jsx"></script>
-<script type="text/babel" src="app.jsx"></script>
+
+<script type="text/babel">
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const hasDeckStage = React.useMemo(
+    () => typeof document !== 'undefined' && !!document.querySelector('deck-stage'),
+    [],
+  );
+  const [railEnabled, setRailEnabled] = React.useState(
+    () => hasDeckStage && !!document.querySelector('deck-stage')?._railEnabled,
+  );
+  React.useEffect(() => {
+    if (!hasDeckStage || railEnabled) return undefined;
+    const onMsg = (e) => {
+      if (e.data && e.data.type === '__omelette_rail_enabled') setRailEnabled(true);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [hasDeckStage, railEnabled]);
+  const [railVisible, setRailVisible] = React.useState(() => {
+    try { return localStorage.getItem('deck-stage.railVisible') !== '0'; } catch (e) { return true; }
+  });
+  const toggleRail = (on) => {
+    setRailVisible(on);
+    window.postMessage({ type: '__deck_rail_visible', on }, '*');
+  };
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-noncommentable=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+          {hasDeckStage && railEnabled && !noDeckControls && (
+            <TweakSection label="Deck">
+              <TweakToggle label="Thumbnail rail" value={railVisible} onChange={toggleRail} />
+            </TweakSection>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+</script>
+
+<script type="text/babel">
+// components.jsx — shared UI: Header, Row, Tile, HoverCard, Icons
+
+const { useState, useEffect, useRef, useMemo } = React;
+
+const Icon = {
+  play: (props) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M8 5v14l11-7z"/></svg>
+  ),
+  pause: (props) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+  ),
+  plus: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" {...props}><path d="M12 5v14M5 12h14"/></svg>
+  ),
+  check: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="4 12 10 18 20 6"/></svg>
+  ),
+  thumb: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M7 22V11M2 13v7a2 2 0 0 0 2 2h13.4a2 2 0 0 0 2-1.7l1.3-8a2 2 0 0 0-2-2.3H14V4a3 3 0 0 0-3-3l-4 9z"/></svg>
+  ),
+  chevDown: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="6 9 12 15 18 9"/></svg>
+  ),
+  chevLeft: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="15 18 9 12 15 6"/></svg>
+  ),
+  chevRight: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="9 18 15 12 9 6"/></svg>
+  ),
+  info: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+  ),
+  search: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" {...props}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+  ),
+  bell: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+  ),
+  volume: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+  ),
+  volumeMute: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>
+  ),
+  fullscreen: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4"/></svg>
+  ),
+  skipBack: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="11 19 2 12 11 5"/><polyline points="22 19 13 12 22 5"/></svg>
+  ),
+  skipFwd: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="13 19 22 12 13 5"/><polyline points="2 19 11 12 2 5"/></svg>
+  ),
+  subtitles: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="7" y1="14" x2="13" y2="14"/><line x1="15" y1="14" x2="17" y2="14"/><line x1="7" y1="10" x2="9" y2="10"/><line x1="11" y1="10" x2="17" y2="10"/></svg>
+  ),
+  episodes: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  ),
+};
+
+function Header({ screen, navTo, profile, brand, onSearch }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const tabs = ['Home', 'TV Shows', 'Movies', 'New & Popular', 'My List'];
+
+  return (
+    <header className={`header ${scrolled ? 'scrolled' : ''}`}>
+      <button className="wedflix-logo" onClick={() => navTo('home')}>{brand || 'WEDFLIX'}</button>
+      <nav>
+        {tabs.map((t, i) => (
+          <button key={t} className={i === 0 && screen === 'home' ? 'active' : ''} onClick={() => navTo('home')}>{t}</button>
+        ))}
+      </nav>
+      <div className="header-right">
+        <div className={`search-bar ${searchOpen ? 'open' : ''}`}>
+          <Icon.search style={{ width: 18, height: 18, color: 'white' }} />
+          <input placeholder="Titles, people, vibes…" autoFocus={searchOpen}/>
+        </div>
+        <button onClick={() => setSearchOpen(s => !s)}><Icon.search /></button>
+        <button>Kids</button>
+        <button><Icon.bell /></button>
+        <div className="avatar" style={{ background: profile.color }}>
+          {profile.name[0]}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function TileArt({ trailer, brand, large, noTitle }) {
+  const data = window.WEDFLIX_DATA;
+  let h = 0;
+  for (let i = 0; i < trailer.id.length; i++) h = (h * 31 + trailer.id.charCodeAt(i)) % 360;
+  const template = h % 3;
+  const patternType = (h >> 3) % 3;
+  const patternBg = patternType === 0
+    ? 'repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 14px)'
+    : patternType === 1
+      ? 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.07) 1px, transparent 2px) 0 0 / 12px 12px'
+      : 'repeating-linear-gradient(45deg, rgba(0,0,0,0.12) 0 4px, transparent 4px 18px)';
+
+  const baseStyle = {
+    background: data.posterGradient(trailer.id),
+    width: '100%', height: '100%',
+    position: 'relative',
+    display: 'flex',
+    overflow: 'hidden',
+  };
+  const titleFs = large ? 'clamp(28px, 4vw, 56px)' : '28px';
+  const titleFsSmall = large ? '34px' : '22px';
+
+  const Pattern = () => (
+    <div style={{ position: 'absolute', inset: 0, background: patternBg, pointerEvents: 'none' }} />
+  );
+  const Vignette = () => (
+    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.5) 100%)', pointerEvents: 'none' }} />
+  );
+  const Watermark = () => (
+    <div style={{ position: 'absolute', top: 10, left: 12, fontFamily: 'var(--font-display)', color: brand, fontSize: large ? 22 : 14, fontWeight: 900, letterSpacing: 0, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>W</div>
+  );
+  const YearBadge = ({ pos = 'br' }) => (
+    <div style={{ position: 'absolute', [pos[0] === 't' ? 'top' : 'bottom']: 10, [pos[1] === 'l' ? 'left' : 'right']: 12, fontFamily: 'var(--font-sans)', color: 'rgba(255,255,255,0.7)', fontSize: large ? 12 : 10, letterSpacing: '0.2em', fontWeight: 600 }}>{trailer.year}</div>
+  );
+
+  if (template === 0) {
+    return (
+      <div className="tile-art" style={baseStyle}>
+        <Pattern />
+        <Vignette />
+        <Watermark />
+        <YearBadge pos="br" />
+        {!noTitle && (
+          <div style={{ margin: 'auto', textAlign: 'center', padding: large ? 40 : 14, zIndex: 1 }}>
+            <div className="tile-art-title" style={{ fontSize: titleFs, lineHeight: 0.92 }}>{trailer.title}</div>
+            <div style={{ marginTop: 10, color: 'rgba(255,255,255,0.85)', fontSize: large ? 13 : 10, letterSpacing: '0.22em', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>— A WEDFLIX ORIGINAL —</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (template === 1) {
+    return (
+      <div className="tile-art" style={baseStyle}>
+        <Pattern />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <Watermark />
+        <div style={{ position: 'absolute', top: 10, right: 12, padding: '2px 8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.3)', fontSize: large ? 11 : 9, letterSpacing: '0.12em', fontWeight: 700, color: 'white' }}>{trailer.rating}</div>
+        {!noTitle && (
+          <div style={{ marginTop: 'auto', padding: large ? 40 : '0 14px 14px', zIndex: 1, alignSelf: 'flex-start', textAlign: 'left' }}>
+            <div className="tile-art-title" style={{ fontSize: titleFsSmall, textAlign: 'left', lineHeight: 0.92 }}>{trailer.title}</div>
+            <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.75)', fontSize: large ? 12 : 9, letterSpacing: '0.2em', fontWeight: 600 }}>{trailer.year} · {trailer.tags[0]}</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="tile-art" style={baseStyle}>
+      <Pattern />
+      <Vignette />
+      <div style={{ position: 'absolute', top: 8, left: 0, right: 0, textAlign: 'center', color: brand, fontSize: large ? 12 : 9, letterSpacing: '0.32em', fontWeight: 800, textTransform: 'uppercase', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
+        ★ Wedflix Original ★
+      </div>
+      <Watermark />
+      <YearBadge pos="bl" />
+      <div style={{ position: 'absolute', bottom: 10, right: 12, color: '#46d369', fontWeight: 800, fontSize: large ? 13 : 10, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{trailer.match}% Match</div>
+      {!noTitle && (
+        <div style={{ margin: 'auto', textAlign: 'center', padding: large ? 40 : 14, zIndex: 1 }}>
+          <div className="tile-art-title" style={{ fontSize: titleFs, lineHeight: 0.92 }}>{trailer.title}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Tile({ trailer, onClick, onHover, onLeave, progress, brand }) {
+  const tileRef = useRef(null);
+  return (
+    <div
+      ref={tileRef}
+      className="tile"
+      onClick={onClick}
+      onMouseEnter={(e) => onHover && onHover(trailer, tileRef.current)}
+      onMouseLeave={onLeave}
+    >
+      <TileArt trailer={trailer} brand={brand} />
+      {progress && <div className="tile-progress"><div className="tile-progress-fill" style={{ width: `${progress}%`, background: brand }}/></div>}
+    </div>
+  );
+}
+
+function Top10Tile({ trailer, rank, onClick, onHover, onLeave, brand }) {
+  const tileRef = useRef(null);
+  return (
+    <div className="tile-top10">
+      <div className="rank-num">{rank}</div>
+      <div ref={tileRef} className="tile" onClick={onClick}
+           onMouseEnter={() => onHover && onHover(trailer, tileRef.current)}
+           onMouseLeave={onLeave}>
+        <TileArt trailer={trailer} brand={brand} />
+      </div>
+    </div>
+  );
+}
+
+function Row({ row, onTileClick, onTileHover, onTileLeave, brand }) {
+  const scrollerRef = useRef(null);
+  const data = window.WEDFLIX_DATA;
+  const trailers = row.ids.map(id => data.trailers.find(t => t.id === id)).filter(Boolean);
+  const isContinue = row.id === 'r1';
+
+  const scroll = (dir) => {
+    if (!scrollerRef.current) return;
+    scrollerRef.current.scrollBy({ left: dir * 720, behavior: 'smooth' });
+  };
+
+  return (
+    <section className="row">
+      <h2 className="row-title">{row.title}</h2>
+      <button className="row-arrow left" onClick={() => scroll(-1)} aria-label="scroll left"><Icon.chevLeft /></button>
+      <div className="row-scroller" ref={scrollerRef}>
+        {trailers.map((t, i) => {
+          if (row.top10) {
+            return <Top10Tile key={t.id} trailer={t} rank={i + 1}
+                              onClick={() => onTileClick(t)}
+                              onHover={onTileHover}
+                              onLeave={onTileLeave}
+                              brand={brand} />;
+          }
+          const progress = isContinue ? 20 + (i * 11) % 80 : null;
+          return <Tile key={t.id} trailer={t}
+                       onClick={() => onTileClick(t)}
+                       onHover={onTileHover}
+                       onLeave={onTileLeave}
+                       progress={progress}
+                       brand={brand} />;
+        })}
+      </div>
+      <button className="row-arrow right" onClick={() => scroll(1)} aria-label="scroll right"><Icon.chevRight /></button>
+    </section>
+  );
+}
+
+function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, toggleMyList, onMouseEnter }) {
+  const cardRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  useEffect(() => {
+    if (!rect) return;
+    const cardW = 360;
+    const tileCx = rect.left + rect.width / 2;
+    let left = tileCx - cardW / 2;
+    left = Math.max(20, Math.min(window.innerWidth - cardW - 20, left));
+    const top = Math.max(80, rect.top - 30);
+    setPos({ left, top });
+  }, [rect]);
+
+  if (!rect || !pos) return null;
+  return (
+    <div
+      ref={cardRef}
+      className="hover-card"
+      style={{ left: pos.left, top: pos.top }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onClose}
+    >
+      <div className="hover-card-art" style={{ overflow: 'hidden' }}>
+        <TileArt trailer={trailer} brand={brand} />
+      </div>
+      <div className="hover-card-body">
+        <div className="hover-card-actions">
+          <button className="icon-btn primary" onClick={onPlay}><Icon.play /></button>
+          <button className="icon-btn" onClick={toggleMyList} title={inMyList ? 'Remove from list' : 'Add to list'}>
+            {inMyList ? <Icon.check /> : <Icon.plus />}
+          </button>
+          <button className="icon-btn"><Icon.thumb /></button>
+          <button className="icon-btn more" onClick={onMore}><Icon.chevDown /></button>
+        </div>
+        <div className="hover-card-meta">
+          <span className="match-pct">{trailer.match}% Match</span>
+          <span className="rating-chip">{trailer.rating}</span>
+          <span>{trailer.mins}m</span>
+          <span style={{ border: '1px solid rgba(255,255,255,0.3)', padding: '0 5px', fontSize: 11 }}>HD</span>
+        </div>
+        <div className="hover-card-tags">
+          {trailer.tags.map(tag => <span key={tag}>{tag}</span>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  Icon, Header, Tile, Top10Tile, Row, HoverCard, TileArt,
+});
+</script>
+
+<script type="text/babel">
+// screens.jsx — ProfileScreen, HomeScreen, DetailScreen, PlaybackScreen
+
+const { useState: useStateS, useEffect: useEffectS, useRef: useRefS, useMemo: useMemoS } = React;
+
+function ProfileScreen({ onPick, brand, brandText }) {
+  const data = window.WEDFLIX_DATA;
+  return (
+    <div className="profile-screen fade-in">
+      <div className="wedflix-logo" style={{ color: brand }}>{brandText}</div>
+      <h1>Who's watching?</h1>
+      <div className="profile-grid">
+        {data.profiles.map((p) =>
+          <button key={p.id} className="profile-card" onClick={() => !p.add && onPick(p)}>
+            <div className={`profile-tile ${p.add ? 'add' : ''}`} style={!p.add ? { background: window.WEDFLIX_DATA.posterGradient(p.id) } : {}}>
+              {p.add ? '+' : p.name[0]}
+            </div>
+            <div className="profile-name">{p.name.replace('+ Add Profile', 'Add Profile')}</div>
+            {p.kid && <div className="profile-kid-tag">Kids</div>}
+          </button>
+        )}
+      </div>
+      <button className="manage-btn">Manage Profiles</button>
+    </div>
+  );
+}
+
+function HomeScreen({ profile, navTo, brand, brandText, heroId, myList, toggleMyList }) {
+  const data = window.WEDFLIX_DATA;
+  const hero = data.trailers.find((t) => t.id === heroId) || data.trailers[1];
+  const [hover, setHover] = useStateS(null);
+  const hoverTimerRef = useRefS(null);
+  const leaveTimerRef = useRefS(null);
+
+  const showHover = (trailer, el) => {
+    clearTimeout(leaveTimerRef.current);
+    clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      setHover({ trailer, rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height } });
+    }, 280);
+  };
+  const hideHover = () => {
+    clearTimeout(hoverTimerRef.current);
+    leaveTimerRef.current = setTimeout(() => setHover(null), 220);
+  };
+  const cancelHide = () => clearTimeout(leaveTimerRef.current);
+
+  return (
+    <div className="home-screen fade-in">
+      <Header screen="home" navTo={navTo} profile={profile} brand={brandText} />
+
+      <section className="hero">
+        <div className="hero-bg">
+          <TileArt trailer={hero} brand={brand} large noTitle />
+        </div>
+        <div className="hero-content">
+          <div className="hero-badge"><span className="w-mark" style={{ color: brand }}>W</span> WEDFLIX ORIGINAL TRAILER</div>
+          <h1 className="hero-title" style={{ letterSpacing: "1.1px", lineHeight: "1.1" }}>{hero.title}</h1>
+          <div className="hero-meta">
+            <span className="match-pct">{hero.match}% Match</span>
+            <span>{hero.year}</span>
+            <span className="rating-chip">{hero.rating}</span>
+            <span>{hero.mins}m</span>
+          </div>
+          <p className="hero-desc">{hero.desc}</p>
+          <div className="hero-actions">
+            <button className="btn btn-primary" onClick={() => navTo('playback', hero.id)}>
+              <Icon.play /> Play
+            </button>
+            <button className="btn btn-secondary" onClick={() => navTo('detail', hero.id)}>
+              <Icon.info /> More Info
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div className="rows">
+        {data.rows.map((row) =>
+          <Row key={row.id} row={row}
+            onTileClick={(t) => navTo('detail', t.id)}
+            onTileHover={showHover}
+            onTileLeave={hideHover}
+            brand={brand} />
+        )}
+      </div>
+
+      {hover &&
+        <HoverCard
+          trailer={hover.trailer}
+          rect={hover.rect}
+          onClose={hideHover}
+          onMouseEnter={cancelHide}
+          onPlay={() => navTo('playback', hover.trailer.id)}
+          onMore={() => navTo('detail', hover.trailer.id)}
+          brand={brand}
+          inMyList={myList.includes(hover.trailer.id)}
+          toggleMyList={() => toggleMyList(hover.trailer.id)} />
+      }
+    </div>
+  );
+}
+
+function DetailScreen({ trailerId, profile, navTo, brand, brandText, myList, toggleMyList }) {
+  const data = window.WEDFLIX_DATA;
+  const t = data.trailers.find((x) => x.id === trailerId);
+  if (!t) return null;
+  const moreLike = data.trailers.filter((x) => x.id !== t.id && x.genres.some((g) => t.genres.includes(g))).slice(0, 6);
+  const inList = myList.includes(t.id);
+
+  useEffectS(() => { window.scrollTo(0, 0); }, [trailerId]);
+
+  return (
+    <div className="detail-screen fade-in">
+      <Header screen="detail" navTo={navTo} profile={profile} brand={brandText} />
+      <button className="detail-back" onClick={() => navTo('home')} aria-label="back"><Icon.chevLeft /></button>
+
+      <div className="detail-hero">
+        <div className="hero-bg">
+          <TileArt trailer={t} brand={brand} large noTitle />
+        </div>
+      </div>
+
+      <div className="detail-content">
+        <div className="detail-left">
+          <div className="hero-badge"><span className="w-mark" style={{ color: brand }}>W</span> WEDFLIX ORIGINAL</div>
+          <h1 style={{ letterSpacing: "0px", lineHeight: "1.1" }}>{t.title}</h1>
+          <div className="detail-meta-row">
+            <span className="match-pct">{t.match}% Match</span>
+            <span>{t.year}</span>
+            <span className="rating-chip">{t.rating}</span>
+            <span>{t.mins}m</span>
+            <span style={{ border: '1px solid rgba(255,255,255,0.3)', padding: '0 5px', fontSize: 11 }}>HD</span>
+          </div>
+          <div className="award-block">
+            <div className="award-name">🏆 {t.award}</div>
+            <div className="award-sub">{t.awardSub}</div>
+          </div>
+          <p className="detail-desc">{t.desc}</p>
+          <div className="detail-actions">
+            <button className="btn btn-primary" onClick={() => navTo('playback', t.id)}><Icon.play /> Play</button>
+            <button className="btn btn-secondary" onClick={() => toggleMyList(t.id)}>
+              {inList ? <Icon.check /> : <Icon.plus />} {inList ? 'On My List' : 'My List'}
+            </button>
+            <button className="btn btn-secondary"><Icon.thumb /> Rate</button>
+          </div>
+        </div>
+
+        <div className="detail-right">
+          <div className="row-item"><span className="label">Cast:</span> <span>{t.cast.join(', ')}</span></div>
+          <div className="row-item"><span className="label">Genres:</span> <span>{t.genres.join(', ')}</span></div>
+          <div className="row-item"><span className="label">This trailer is:</span> <span>{t.tags.join(', ')}</span></div>
+          <div className="row-item"><span className="label">Maturity rating:</span> <span>{t.rating} — Strong language, mild inside jokes</span></div>
+        </div>
+      </div>
+
+      <h2 className="section-title">More Like This</h2>
+      <div style={{ padding: '0 56px 80px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+          {moreLike.map((mt) =>
+            <div key={mt.id} className="tile" style={{ width: '100%', cursor: 'pointer' }} onClick={() => navTo('detail', mt.id)}>
+              <TileArt trailer={mt} brand={brand} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlaybackScreen({ trailerId, navTo, brand, hudVariant, greenColor, hudOptions }) {
+  const data = window.WEDFLIX_DATA;
+  const t = data.trailers.find((x) => x.id === trailerId);
+  if (!t) return null;
+  const next = data.trailers[(data.trailers.indexOf(t) + 1) % data.trailers.length];
+
+  const [showHud, setShowHud] = useStateS(true);
+  const [playing, setPlaying] = useStateS(true);
+  const [muted, setMuted] = useStateS(false);
+  const [progress, setProgress] = useStateS(8);
+  const totalSec = t.mins * 60;
+  const elapsedSec = Math.floor(totalSec * progress / 100);
+  const remainingSec = totalSec - elapsedSec;
+
+  const hideTimer = useRefS(null);
+  const bumpHud = () => {
+    setShowHud(true);
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => playing && setShowHud(false), 3000);
+  };
+  useEffectS(() => {
+    bumpHud();
+    return () => clearTimeout(hideTimer.current);
+  }, [trailerId, playing]);
+
+  useEffectS(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      setProgress((p) => {
+        const np = p + 100 / totalSec * 0.4;
+        return np >= 100 ? 100 : np;
+      });
+    }, 400);
+    return () => clearInterval(id);
+  }, [playing, totalSec]);
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60);
+    const r = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${r}`;
+  };
+
+  const showSkipIntro = progress < 25 && hudVariant !== 'minimal';
+  const showUpNext = progress > 85 && hudVariant === 'loaded';
+  const opt = hudOptions || {};
+  const showTags = opt.tags !== false && hudVariant !== 'minimal';
+
+  return (
+    <div className={`playback ${showHud ? 'show-hud' : ''}`} onMouseMove={bumpHud} onClick={(e) => { if (e.target.classList.contains('playback') || e.target.classList.contains('playback-greenscreen')) setPlaying((p) => !p); }}>
+      <div className="playback-greenscreen" style={{ background: greenColor }}>
+        <div className="gs-label">
+          <div className="gs-title">[ GREEN SCREEN ]</div>
+          <div>Replace with footage: {t.title}</div>
+          <div style={{ marginTop: 8, fontSize: 11, opacity: 0.6 }}>Chroma key {greenColor} · {totalSec}s runtime</div>
+        </div>
+      </div>
+
+      <div className="playback-hud">
+        <div className="hud-top">
+          <button className="back" onClick={() => navTo('home')} aria-label="back"><Icon.chevLeft /></button>
+          <div className="hud-title">
+            <small><span style={{ color: brand, fontFamily: 'var(--font-display)', fontWeight: 900, marginRight: 6 }}>W</span> A WEDFLIX ORIGINAL</small>
+            {t.title}
+          </div>
+          {showTags &&
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+              {t.tags.slice(0, 3).map((tag) =>
+                <span key={tag} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.3)', padding: '4px 10px', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{tag}</span>
+              )}
+              <span style={{ background: 'rgba(200,16,46,0.85)', padding: '4px 10px', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700 }}>🏆 {t.award}</span>
+            </div>
+          }
+        </div>
+
+        {hudVariant !== 'minimal' &&
+          <div style={{ position: 'absolute', top: 100, left: 40, display: 'flex', flexDirection: 'column', gap: 4, color: 'white' }}>
+            <div style={{ background: 'rgba(0,0,0,0.5)', padding: '6px 12px', fontSize: 13, alignSelf: 'flex-start', fontVariantNumeric: 'tabular-nums' }}>
+              <span className="match-pct">{t.match}% Match</span>
+              <span style={{ marginLeft: 10, color: 'var(--fg-muted)' }}>{t.year} · {t.rating} · {t.mins}m</span>
+            </div>
+            {hudVariant === 'loaded' &&
+              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '6px 12px', fontSize: 12, color: 'var(--fg-muted)', alignSelf: 'flex-start' }}>
+                {t.awardSub}
+              </div>
+            }
+          </div>
+        }
+
+        {showSkipIntro && <button className="hud-skipintro">Skip Intro</button>}
+
+        {showUpNext &&
+          <div className="hud-upnext">
+            <div className="small-tile" style={{ background: window.WEDFLIX_DATA.posterGradient(next.id) }}>
+              <div className="small-tile-art">{next.title.split(':')[0]}</div>
+            </div>
+            <div className="un-body">
+              <small>Next Episode</small>
+              <h4>{next.title}</h4>
+              <p>{next.desc.slice(0, 90)}…</p>
+            </div>
+          </div>
+        }
+
+        <div className="hud-bottom">
+          <div className="hud-scrubber">
+            <span>{fmt(elapsedSec)}</span>
+            <div className="bar" onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              setProgress((e.clientX - r.left) / r.width * 100);
+            }}>
+              <div className="bar-fill" style={{ width: `${progress}%`, background: brand }} />
+              <div className="bar-knob" style={{ left: `${progress}%`, background: brand }} />
+            </div>
+            <span>-{fmt(remainingSec)}</span>
+          </div>
+          <div className="hud-controls">
+            <button className="play" onClick={() => setPlaying((p) => !p)}>
+              {playing ? <Icon.pause /> : <Icon.play />}
+            </button>
+            <button onClick={() => setProgress((p) => Math.max(0, p - 5))}><Icon.skipBack /></button>
+            <button onClick={() => setProgress((p) => Math.min(100, p + 5))}><Icon.skipFwd /></button>
+            <button onClick={() => setMuted((m) => !m)}>{muted ? <Icon.volumeMute /> : <Icon.volume />}</button>
+            <div style={{ marginLeft: 8, fontSize: 16, fontWeight: 600 }}>{t.title}</div>
+            <div className="right-cluster">
+              <button className="hud-next" onClick={() => navTo('playback', next.id)}>
+                <Icon.skipFwd /> Next Episode
+              </button>
+              <button title="Episodes & Info"><Icon.episodes /></button>
+              <button title="Subtitles"><Icon.subtitles /></button>
+              <button title="Fullscreen"><Icon.fullscreen /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  ProfileScreen, HomeScreen, DetailScreen, PlaybackScreen
+});
+</script>
+
+<script type="text/babel">
+// app.jsx — root App component
+
+const { useState: useStateA, useEffect: useEffectA, useMemo: useMemoA } = React;
+
+const WEDFLIX_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "brand": "#C8102E",
+  "brandText": "WEDFLIX",
+  "green": "#00B140",
+  "hudVariant": "standard",
+  "heroId": "t02",
+  "showHudTags": true
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = window.useTweaks
+    ? window.useTweaks(WEDFLIX_DEFAULTS)
+    : [WEDFLIX_DEFAULTS, () => {}];
+
+  const [screen, setScreen] = useStateA('profile');
+  const [profile, setProfile] = useStateA(null);
+  const [currentTrailerId, setCurrentTrailerId] = useStateA(null);
+  const [myList, setMyList] = useStateA(['t02', 't09', 't20']);
+
+  const navTo = (s, trailerId) => {
+    if (trailerId) setCurrentTrailerId(trailerId);
+    setScreen(s);
+    window.scrollTo(0, 0);
+  };
+
+  const toggleMyList = (id) => {
+    setMyList(list => list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
+  };
+
+  useEffectA(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape' && screen === 'playback') navTo('home');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [screen]);
+
+  useEffectA(() => {
+    document.documentElement.style.setProperty('--brand', tweaks.brand);
+    document.documentElement.style.setProperty('--green-screen', tweaks.green);
+  }, [tweaks.brand, tweaks.green]);
+
+  const renderScreen = () => {
+    if (screen === 'profile' || !profile) {
+      return <ProfileScreen brand={tweaks.brand} brandText={tweaks.brandText} onPick={(p) => { setProfile(p); setScreen('home'); }} />;
+    }
+    if (screen === 'home') {
+      return <HomeScreen profile={profile} navTo={navTo} brand={tweaks.brand} brandText={tweaks.brandText} heroId={tweaks.heroId} myList={myList} toggleMyList={toggleMyList} />;
+    }
+    if (screen === 'detail') {
+      return <DetailScreen trailerId={currentTrailerId} profile={profile} navTo={navTo} brand={tweaks.brand} brandText={tweaks.brandText} myList={myList} toggleMyList={toggleMyList} />;
+    }
+    if (screen === 'playback') {
+      return <PlaybackScreen
+        trailerId={currentTrailerId}
+        navTo={navTo}
+        brand={tweaks.brand}
+        hudVariant={tweaks.hudVariant}
+        greenColor={tweaks.green}
+        hudOptions={{ tags: tweaks.showHudTags }}
+      />;
+    }
+    return null;
+  };
+
+  return (
+    <React.Fragment>
+      {renderScreen()}
+
+      {window.TweaksPanel && (
+        <window.TweaksPanel title="Tweaks">
+          <window.TweakSection label="Brand">
+            <window.TweakText label="Wordmark" value={tweaks.brandText} onChange={(v) => setTweak('brandText', v)} />
+            <window.TweakColor label="Accent" value={tweaks.brand}
+              onChange={(v) => setTweak('brand', v)}
+              options={['#C8102E', '#8B0028', '#D4A574', '#1F8A5B', '#1E3A8A', '#000000']} />
+          </window.TweakSection>
+
+          <window.TweakSection label="Playback HUD">
+            <window.TweakRadio label="HUD density"
+              value={tweaks.hudVariant}
+              onChange={(v) => setTweak('hudVariant', v)}
+              options={[
+                { value: 'minimal', label: 'Minimal' },
+                { value: 'standard', label: 'Standard' },
+                { value: 'loaded', label: 'Loaded' },
+              ]} />
+            <window.TweakToggle label="Show tag pills + award"
+              value={tweaks.showHudTags}
+              onChange={(v) => setTweak('showHudTags', v)} />
+            <window.TweakColor label="Green screen"
+              value={tweaks.green}
+              onChange={(v) => setTweak('green', v)}
+              options={['#00B140', '#00FF00', '#0047BB', '#FF00FF']} />
+          </window.TweakSection>
+
+          <window.TweakSection label="Hero">
+            <window.TweakSelect label="Featured trailer"
+              value={tweaks.heroId}
+              onChange={(v) => setTweak('heroId', v)}
+              options={window.WEDFLIX_DATA.trailers.map(tr => ({ value: tr.id, label: tr.title }))} />
+          </window.TweakSection>
+
+          <window.TweakSection label="Quick nav">
+            <window.TweakButton label="Profile picker" onClick={() => setScreen('profile')} />
+            <window.TweakButton label="Home" onClick={() => { if (!profile) setProfile(window.WEDFLIX_DATA.profiles[0]); setScreen('home'); }} />
+            <window.TweakButton label="Detail (featured)" onClick={() => { if (!profile) setProfile(window.WEDFLIX_DATA.profiles[0]); navTo('detail', tweaks.heroId); }} />
+            <window.TweakButton label="Playback (featured)" onClick={() => { if (!profile) setProfile(window.WEDFLIX_DATA.profiles[0]); navTo('playback', tweaks.heroId); }} />
+          </window.TweakSection>
+        </window.TweaksPanel>
+      )}
+    </React.Fragment>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+
 </body>
 </html>
