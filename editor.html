@@ -103,8 +103,7 @@
       zip.file('data.js', serializeData(state));
       const imgFolder = zip.folder('images');
       for (const [trailerId, { file }] of Object.entries(state.imageFiles)) {
-        const ext = file.name.split('.').pop() || 'jpg';
-        imgFolder.file(`${trailerId}.${ext}`, file);
+        imgFolder.file(`${trailerId}.jpg`, file);
       }
       const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
@@ -485,7 +484,11 @@
         const errs = validate(state);
         if (errs.length) { setExportErrors(errs); return; }
         setExportErrors([]);
-        await exportZip(state);
+        try {
+          await exportZip(state);
+        } catch (err) {
+          setExportErrors([`Export failed: ${err.message || 'Unknown error'}. Try again or check the browser console.`]);
+        }
       };
 
       const updateTrailer = (id, field, val) => {
