@@ -19,7 +19,16 @@
       "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/data.js /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/data.js)",
       "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/styles.css /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/styles.css)",
       "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/components.jsx /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/components.jsx)",
-      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/screens.jsx /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/screens.jsx)"
+      "Bash(cp /tmp/wedflix-bundle/netflix-wedding-app/project/screens.jsx /mnt/d/Dev/Netflix_Wedding_App/Netflix_Wedding_WebApp/screens.jsx)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "WebFetch(domain:api.themoviedb.org)",
+      "Bash(New-Item *)",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)",
+      "Bash(Get-ChildItem images/)",
+      "Bash(Select-Object Name, Length)",
+      "Bash(Sort-Object Name)"
     ]
   }
 }
