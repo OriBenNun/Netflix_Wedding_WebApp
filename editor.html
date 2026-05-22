@@ -40,7 +40,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useRef, useCallback } = React;
+    const { useState, useRef } = React;
 
     // ---- STATE INIT ----
     function initState() {
@@ -110,7 +110,7 @@
     // ---- TRAILER CARD ----
     const RATINGS = ['TV-G','TV-PG','TV-14','TV-MA','G','PG','PG-13','R'];
 
-    function TrailerCard({ trailer, imagePreview, onUpdate, onImageDrop, onRemove, allIds }) {
+    function TrailerCard({ trailer, imagePreview, onUpdate, onImageDrop, onRemove }) {
       const update = (field, val) => onUpdate(trailer.id, field, val);
       const descLen = (trailer.desc || '').length;
 
@@ -138,11 +138,11 @@
               </div>
               <div className="field">
                 <label>Year</label>
-                <input type="number" value={trailer.year || ''} onChange={e => update('year', Number(e.target.value))} />
+                <input type="number" value={trailer.year || ''} onChange={e => update('year', e.target.value === '' ? '' : Number(e.target.value))} />
               </div>
               <div className="field">
                 <label>Mins</label>
-                <input type="number" value={trailer.mins || ''} onChange={e => update('mins', Number(e.target.value))} />
+                <input type="number" value={trailer.mins || ''} onChange={e => update('mins', e.target.value === '' ? '' : Number(e.target.value))} />
               </div>
               <div className="field">
                 <label>Rating</label>
@@ -170,7 +170,7 @@
               </div>
               <div className="field">
                 <label>Match %</label>
-                <input type="number" min={0} max={100} value={trailer.match || ''} onChange={e => update('match', Number(e.target.value))} />
+                <input type="number" min={0} max={100} value={trailer.match || ''} onChange={e => update('match', e.target.value === '' ? '' : Number(e.target.value))} />
               </div>
               <div className="field">
                 <label>Award</label>
@@ -214,7 +214,6 @@
                 onUpdate={onUpdateTrailer}
                 onImageDrop={onImageDrop}
                 onRemove={onRemoveTrailer}
-                allIds={trailers.map(x => x.id)}
               />
             ))}
           </div>
