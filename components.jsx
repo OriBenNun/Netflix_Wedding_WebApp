@@ -100,13 +100,15 @@ function Header({ screen, navTo, profile, brand, onSearch }) {
 // Three composition templates assigned deterministically by trailer id, so each
 // trailer has its own visual identity even with placeholder art.
 function TileArt({ trailer, brand, large, noTitle }) {
-  if (trailer.image) {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (trailer.image && !imgFailed) {
     return (
       <div className="tile-art" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
         <img
           src={trailer.image}
           alt={trailer.title}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={() => setImgFailed(true)}
         />
       </div>
     );
