@@ -42,6 +42,81 @@
   <script type="text/babel">
     const { useState, useRef } = React;
 
+    // ---- HELPERS ----
+    function splitCsv(val) {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      return val.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    function serializeData(state) {
+      const { trailers, rows, profiles, imageFiles } = state;
+
+      const trailersJs = trailers.map(t => {
+        const hasImage = imageFiles[t.id] || t.image;
+        const imageField = hasImage ? `\n    image: 'images/${t.id}.jpg',` : '';
+        const tags = JSON.stringify(splitCsv(t.tags));
+        const cast = JSON.stringify(splitCsv(t.cast));
+        const genres = JSON.stringify(splitCsv(t.genres));
+        return (
+          `    { id: '${t.id}', title: ${JSON.stringify(t.title)}, year: ${Number(t.year) || 2024}, mins: ${Number(t.mins) || 4}, rating: '${t.rating || 'TV-PG'}', tags: ${tags}, match: ${Number(t.match) || 90}, award: ${JSON.stringify(t.award || '')}, awardSub: ${JSON.stringify(t.awardSub || '')}, desc: ${JSON.stringify(t.desc || '')}, cast: ${cast}, genres: ${genres}${imageField} }`
+        );
+      }).join(',\n');
+
+      const rowsJs = rows.map(r => {
+        const top10Part = r.top10 ? `, top10: true` : '';
+        return `    { id: '${r.id}', title: ${JSON.stringify(r.title)}, ids: ${JSON.stringify(r.ids)}${top10Part} }`;
+      }).join(',\n');
+
+      const profilesJs = profiles.map(p => {
+        const extras = [
+          p.kid ? `kid: true` : null,
+          p.add ? `add: true` : null,
+        ].filter(Boolean).map(e => `, ${e}`).join('');
+        return `    { id: '${p.id}', name: ${JSON.stringify(p.name)}, color: '${p.color}'${extras} }`;
+      }).join(',\n');
+
+      const gradientFn = `  posterGradient(id) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
+    const h2 = (h + 40) % 360;
+    return \`linear-gradient(135deg, oklch(0.35 0.18 \${h}) 0%, oklch(0.18 0.12 \${h2}) 100%)\`;
+  },`;
+
+      return `// Wedflix trailer data — edit via editor.html, then export ZIP.\n// Edit titles/descriptions/tags to match the actual filmed trailers.\n\nwindow.WEDFLIX_DATA = {\n  profiles: [\n${profilesJs}\n  ],\n\n  trailers: [\n${trailersJs}\n  ],\n\n  rows: [\n${rowsJs}\n  ],\n\n  // Procedurally generated tile gradient — fallback when no image is set.\n${gradientFn}\n};\n`;
+    }
+
+    function validate(state) {
+      const errors = [];
+      state.trailers.forEach(t => {
+        if (!t.title || !t.title.trim()) errors.push(`Trailer ${t.id}: title is required`);
+        if (!t.desc || !t.desc.trim()) errors.push(`Trailer ${t.id} ("${t.title || 'untitled'}"): description is required`);
+      });
+      state.rows.forEach(r => {
+        if (!r.title || !r.title.trim()) errors.push(`Category ${r.id}: title is required`);
+      });
+      return errors;
+    }
+
+    async function exportZip(state) {
+      const zip = new JSZip();
+      zip.file('data.js', serializeData(state));
+      const imgFolder = zip.folder('images');
+      for (const [trailerId, { file }] of Object.entries(state.imageFiles)) {
+        const ext = file.name.split('.').pop() || 'jpg';
+        imgFolder.file(`${trailerId}.${ext}`, file);
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wedflix-content.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     // ---- STATE INIT ----
     function initState() {
       const d = window.WEDFLIX_DATA;
@@ -404,6 +479,14 @@
     function App() {
       const [state, setState] = useState(initState);
       const [tab, setTab] = useState('trailers');
+      const [exportErrors, setExportErrors] = useState([]);
+
+      const handleExport = async () => {
+        const errs = validate(state);
+        if (errs.length) { setExportErrors(errs); return; }
+        setExportErrors([]);
+        await exportZip(state);
+      };
 
       const updateTrailer = (id, field, val) => {
         setState(s => ({ ...s, trailers: s.trailers.map(t => t.id === id ? { ...t, [field]: val } : t) }));
@@ -443,7 +526,7 @@
             <div className="instructions">
               Edit content, then click <strong>Export ZIP</strong>. Unzip and copy <code>data.js</code> + <code>images/</code> into the Netflix_Wedding_WebApp folder.
             </div>
-            <button className="export-btn" disabled>Export ZIP</button>
+            <button className="export-btn" onClick={handleExport}>Export ZIP</button>
           </div>
           <div className="tab-nav">
             {['trailers','categories','profiles'].map(t => (
@@ -456,6 +539,14 @@
             ))}
           </div>
           <div className="tab-content">
+            {exportErrors.length > 0 && (
+              <div className="validation-error">
+                <strong>Please fix before exporting:</strong>
+                <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+                  {exportErrors.map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              </div>
+            )}
             {tab === 'trailers' && (
               <TrailersSection
                 trailers={state.trailers}
