@@ -221,6 +221,115 @@
       );
     }
 
+    // ---- CATEGORIES SECTION ----
+    function CategoriesSection({ rows, trailers, onUpdateRows }) {
+      const [dragIdx, setDragIdx] = React.useState(null);
+
+      const updateRowTitle = (rowId, title) => {
+        onUpdateRows(rows.map(r => r.id === rowId ? { ...r, title } : r));
+      };
+
+      const updateRowIds = (rowId, ids) => {
+        onUpdateRows(rows.map(r => r.id === rowId ? { ...r, ids } : r));
+      };
+
+      const toggleTop10 = (rowId) => {
+        onUpdateRows(rows.map(r => r.id === rowId ? { ...r, top10: !r.top10 } : r));
+      };
+
+      const addRow = () => {
+        const nums = rows.map(r => parseInt(r.id.replace('r',''), 10)).filter(n => !isNaN(n));
+        const nextNum = nums.length ? Math.max(...nums) + 1 : rows.length + 1;
+        onUpdateRows([...rows, { id: `r${nextNum}`, title: 'New Category', ids: [] }]);
+      };
+
+      const removeRow = (rowId) => {
+        if (confirm('Remove this category?')) onUpdateRows(rows.filter(r => r.id !== rowId));
+      };
+
+      const handleDragStart = (i) => setDragIdx(i);
+      const handleDrop = (i) => {
+        if (dragIdx === null || dragIdx === i) { setDragIdx(null); return; }
+        const next = [...rows];
+        const [moved] = next.splice(dragIdx, 1);
+        next.splice(i, 0, moved);
+        onUpdateRows(next);
+        setDragIdx(null);
+      };
+
+      const trailerMap = Object.fromEntries(trailers.map(t => [t.id, t.title]));
+
+      return (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700 }}>Categories ({rows.length})</h2>
+            <button className="btn-secondary" onClick={addRow}>+ Add Category</button>
+          </div>
+          <p style={{ fontSize: 12, color: '#666', marginBottom: 16 }}>Drag rows to reorder. Click a trailer chip to remove it from the category. Use the dropdown to add trailers.</p>
+          {rows.map((row, i) => (
+            <div
+              key={row.id}
+              draggable
+              onDragStart={() => handleDragStart(i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(i)}
+              style={{
+                background: '#1a1a1a', border: '1px solid #333', borderRadius: 8,
+                padding: 16, marginBottom: 12, cursor: 'grab',
+                opacity: dragIdx === i ? 0.5 : 1,
+              }}
+            >
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ color: '#555', fontSize: 18 }}>⠿</span>
+                <input
+                  type="text"
+                  value={row.title}
+                  onChange={e => updateRowTitle(row.id, e.target.value)}
+                  style={{ flex: 1, fontWeight: 600 }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888', textTransform: 'none', letterSpacing: 0 }}>
+                  <input type="checkbox" checked={!!row.top10} onChange={() => toggleTop10(row.id)} />
+                  Top 10 style
+                </label>
+                <button className="btn-danger" onClick={() => removeRow(row.id)}>Remove</button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {row.ids.map(tid => (
+                  <span
+                    key={tid}
+                    title="Click to remove"
+                    onClick={() => updateRowIds(row.id, row.ids.filter(id => id !== tid))}
+                    style={{
+                      background: '#2a2a2a', border: '1px solid #444', borderRadius: 16,
+                      padding: '3px 10px', fontSize: 12, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}
+                  >
+                    {trailerMap[tid] || tid} <span style={{ color: '#e50914' }}>×</span>
+                  </span>
+                ))}
+              </div>
+              <select
+                value=""
+                onChange={e => {
+                  if (!e.target.value) return;
+                  if (!row.ids.includes(e.target.value))
+                    updateRowIds(row.id, [...row.ids, e.target.value]);
+                  e.target.value = '';
+                }}
+                style={{ width: 'auto', minWidth: 200 }}
+              >
+                <option value="">+ Add trailer to category…</option>
+                {trailers.filter(t => !row.ids.includes(t.id)).map(t => (
+                  <option key={t.id} value={t.id}>{t.title}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     // ---- APP ----
     function App() {
       const [state, setState] = useState(initState);
@@ -245,6 +354,8 @@
           }]
         }));
       };
+
+      const updateRows = (rows) => setState(s => ({ ...s, rows }));
 
       const removeTrailer = (id) => {
         setState(s => ({
@@ -284,7 +395,13 @@
                 onRemoveTrailer={removeTrailer}
               />
             )}
-            {tab === 'categories' && <p style={{color:'#666'}}>Categories section — Task 6</p>}
+            {tab === 'categories' && (
+              <CategoriesSection
+                rows={state.rows}
+                trailers={state.trailers}
+                onUpdateRows={updateRows}
+              />
+            )}
             {tab === 'profiles' && <p style={{color:'#666'}}>Profiles section — Task 7</p>}
           </div>
         </div>
