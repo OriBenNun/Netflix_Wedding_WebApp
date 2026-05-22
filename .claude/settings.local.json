@@ -28,7 +28,9 @@
       "Bash(Select-Object -ExpandProperty Count)",
       "Bash(Get-ChildItem images/)",
       "Bash(Select-Object Name, Length)",
-      "Bash(Sort-Object Name)"
+      "Bash(Sort-Object Name)",
+      "Bash(identify images/t01.jpg)",
+      "Bash(node *)"
     ]
   }
 }
