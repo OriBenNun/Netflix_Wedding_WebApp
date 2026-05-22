@@ -592,6 +592,15 @@ function Header({ screen, navTo, profile, brand, onSearch }) {
 
 function TileArt({ trailer, brand, large, noTitle }) {
   const data = window.WEDFLIX_DATA;
+  if (trailer.image) {
+    return (
+      <div className="tile-art" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+        <img src={trailer.image} alt={trailer.title}
+             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+             onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      </div>
+    );
+  }
   let h = 0;
   for (let i = 0; i < trailer.id.length; i++) h = (h * 31 + trailer.id.charCodeAt(i)) % 360;
   const template = h % 3;
