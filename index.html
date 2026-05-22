@@ -755,9 +755,10 @@ function Row({ row, onTileClick, onTileHover, onTileLeave, brand }) {
   );
 }
 
-function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, toggleMyList, onMouseEnter }) {
+function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, toggleMyList, onMouseEnter, onAutoPlay }) {
   const cardRef = useRef(null);
   const [pos, setPos] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
   useEffect(() => {
     if (!rect) return;
     const cardW = 360;
@@ -768,6 +769,17 @@ function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, to
     setPos({ left, top });
   }, [rect]);
 
+  useEffect(() => {
+    const previewTimer = setTimeout(() => setPreviewing(true), 2000);
+    return () => clearTimeout(previewTimer);
+  }, [trailer.id]);
+
+  useEffect(() => {
+    if (!previewing || !onAutoPlay) return;
+    const expandTimer = setTimeout(() => onAutoPlay(), 3000);
+    return () => clearTimeout(expandTimer);
+  }, [previewing, onAutoPlay]);
+
   if (!rect || !pos) return null;
   return (
     <div
@@ -777,8 +789,12 @@ function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, to
       onMouseEnter={onMouseEnter}
       onMouseLeave={onClose}
     >
-      <div className="hover-card-art" style={{ overflow: 'hidden' }}>
-        <TileArt trailer={trailer} brand={brand} />
+      <div className={`hover-card-art${previewing ? ' preview' : ''}`} style={{ overflow: 'hidden' }}>
+        {previewing
+          ? <div className="hover-card-preview">
+              <div className="hover-card-preview-title">{trailer.title}</div>
+            </div>
+          : <TileArt trailer={trailer} brand={brand} />}
       </div>
       <div className="hover-card-body">
         <div className="hover-card-actions">
@@ -902,6 +918,7 @@ function HomeScreen({ profile, navTo, brand, brandText, heroId, myList, toggleMy
           onClose={hideHover}
           onMouseEnter={cancelHide}
           onPlay={() => navTo('playback', hover.trailer.id)}
+          onAutoPlay={() => navTo('playback', hover.trailer.id)}
           onMore={() => navTo('detail', hover.trailer.id)}
           brand={brand}
           inMyList={myList.includes(hover.trailer.id)}

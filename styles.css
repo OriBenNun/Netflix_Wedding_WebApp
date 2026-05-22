@@ -415,6 +415,24 @@ img { display: block; max-width: 100%; }
   position: absolute; inset: 0;
   background: linear-gradient(0deg, var(--bg-elevated) 0%, transparent 50%);
 }
+.hover-card-art.preview { background: var(--green-screen); transition: background 200ms ease; }
+.hover-card-preview {
+  position: absolute; inset: 0;
+  background: var(--green-screen);
+  animation: hoverPreviewFade 220ms ease;
+}
+.hover-card-preview-title {
+  position: absolute;
+  left: 12px; bottom: 14px;
+  color: rgba(0,0,0,0.55);
+  font: 600 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+@keyframes hoverPreviewFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 .hover-card-body { padding: 14px 16px 16px; }
 .hover-card-actions {
   display: flex;
