@@ -54,7 +54,7 @@
 
       const trailersJs = trailers.map(t => {
         const hasImage = imageFiles[t.id] || t.image;
-        const imageField = hasImage ? `\n    image: 'images/${t.id}.jpg',` : '';
+        const imageField = hasImage ? `, image: 'images/${t.id}.jpg'` : '';
         const tags = JSON.stringify(splitCsv(t.tags));
         const cast = JSON.stringify(splitCsv(t.cast));
         const genres = JSON.stringify(splitCsv(t.genres));
