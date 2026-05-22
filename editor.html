@@ -330,6 +330,76 @@
       );
     }
 
+    // ---- PROFILES SECTION ----
+    function ProfilesSection({ profiles, onUpdateProfiles }) {
+      const updateProfile = (id, field, val) => {
+        onUpdateProfiles(profiles.map(p => p.id === id ? { ...p, [field]: val } : p));
+      };
+
+      const addProfile = () => {
+        const nums = profiles.map(p => parseInt(p.id.replace('p',''), 10)).filter(n => !isNaN(n));
+        const nextNum = nums.length ? Math.max(...nums) + 1 : profiles.length + 1;
+        onUpdateProfiles([...profiles.filter(p => !p.add), {
+          id: `p${nextNum}`, name: 'New Profile', color: '#6b7280',
+        }, profiles.find(p => p.add)].filter(Boolean));
+      };
+
+      const removeProfile = (id) => {
+        if (confirm('Remove this profile?')) onUpdateProfiles(profiles.filter(p => p.id !== id));
+      };
+
+      const editableProfiles = profiles.filter(p => !p.add);
+      const addEntry = profiles.find(p => p.add);
+
+      return (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700 }}>Profiles ({editableProfiles.length})</h2>
+            <button className="btn-secondary" onClick={addProfile}>+ Add Profile</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {editableProfiles.map(p => (
+              <div key={p.id} style={{
+                background: '#1a1a1a', border: '1px solid #333', borderRadius: 8,
+                padding: 16, display: 'flex', gap: 12, alignItems: 'center',
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 6, background: p.color,
+                  flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 20, fontWeight: 700, color: 'white',
+                }}>
+                  {(p.name || '?')[0]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label>Name</label>
+                    <input type="text" value={p.name || ''} onChange={e => updateProfile(p.id, 'name', e.target.value)} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div className="field" style={{ marginBottom: 0, flex: 1 }}>
+                      <label>Color</label>
+                      <input type="color" value={p.color || '#888888'} onChange={e => updateProfile(p.id, 'color', e.target.value)}
+                        style={{ height: 32, padding: 2, cursor: 'pointer', width: '100%' }} />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888', textTransform: 'none', letterSpacing: 0, marginTop: 14 }}>
+                      <input type="checkbox" checked={!!p.kid} onChange={e => updateProfile(p.id, 'kid', e.target.checked)} />
+                      Kids
+                    </label>
+                  </div>
+                </div>
+                <button className="btn-danger" style={{ alignSelf: 'flex-start' }} onClick={() => removeProfile(p.id)}>×</button>
+              </div>
+            ))}
+          </div>
+          {addEntry && (
+            <p style={{ marginTop: 16, fontSize: 12, color: '#555' }}>
+              The "+ Add Profile" entry is always shown in the app; it is not editable here.
+            </p>
+          )}
+        </div>
+      );
+    }
+
     // ---- APP ----
     function App() {
       const [state, setState] = useState(initState);
@@ -356,6 +426,7 @@
       };
 
       const updateRows = (rows) => setState(s => ({ ...s, rows }));
+      const updateProfiles = (profiles) => setState(s => ({ ...s, profiles }));
 
       const removeTrailer = (id) => {
         setState(s => ({
@@ -402,7 +473,12 @@
                 onUpdateRows={updateRows}
               />
             )}
-            {tab === 'profiles' && <p style={{color:'#666'}}>Profiles section — Task 7</p>}
+            {tab === 'profiles' && (
+              <ProfilesSection
+                profiles={state.profiles}
+                onUpdateProfiles={updateProfiles}
+              />
+            )}
           </div>
         </div>
       );
