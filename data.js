@@ -2,6 +2,8 @@
 // Edit titles/descriptions/tags to match the actual filmed trailers.
 
 window.WEDFLIX_DATA = {
+  featuredId: "t01",
+
   profiles: [
     { id: 'p1', name: "The Bride", color: '#C8102E' },
     { id: 'p2', name: "The Groom", color: '#3B82F6' },
@@ -11,7 +13,7 @@ window.WEDFLIX_DATA = {
   ],
 
   trailers: [
-    { id: 't01', title: "פריק על רצועה", year: 2016, mins: 4, rating: 'PG', tags: ["פרובוקטיבי","מעלה גיחוך","חסר מעצורים"], match: 67, award: "Critically Roasted", awardSub: "Winner: Best Use of Pickup Line", desc: "כשכלום לא מצליח, לפעמים פשוט צריך לשים את הפריק על הרצועה ולהוציא אותו לטיול קטן בגינה.", cast: ["חמליץ","בימן","ג'ינג'רפאקר"], genres: ["רומנטי","קומדיה","דוקו"], image: 'images/t01.jpg' },
+    { id: 't01', title: "שלום", year: 2016, mins: 4, rating: 'PG', tags: ["פרובוקטיבי","מעלה גיחוך","חסר מעצורים"], match: 67, award: "Critically Roasted", awardSub: "Winner: Best Use of Pickup Line", desc: "היי שלום", cast: ["חמליץ","בימן"], genres: ["רומנטי","קומדיה","דוקו"], image: 'images/t01.jpg' },
     { id: 't02', title: "The Proposal: Directors Cut", year: 2023, mins: 6, rating: 'TV-PG', tags: ["Sentimental","Tear-Jerker","Pre-Planned Down To The Minute"], match: 99, award: "Mom Approved", awardSub: "Nominated: Best Crying On Camera", desc: "After 47 failed rehearsals, the groom finally pops the question. Camera angles courtesy of a cousin who watched too many YouTube tutorials.", cast: ["Sarah M.","Daniel K.","A hidden cousin"], genres: ["Romance","Drama"], image: 'images/t02.jpg' },
     { id: 't03', title: "Bachelorette: Vegas Heist", year: 2024, mins: 5, rating: 'TV-MA', tags: ["Chaotic","Hangover-Inducing","Lost Phone Energy"], match: 94, award: "Cease & Desist Pending", awardSub: "Banned in 3 hotel chains", desc: "Seven bridesmaids, one suite, zero impulse control. What happened on the strip is rumored to be the subject of a pending Netflix lawsuit.", cast: ["The Bride","The Maids","Elvis impersonator #4"], genres: ["Action","Comedy"], image: 'images/t03.jpg' },
     { id: 't04', title: "Bachelor Party: Tokyo Drift", year: 2024, mins: 4, rating: 'TV-MA', tags: ["Misguided","Karaoke-Heavy","Filmed Vertically"], match: 87, award: "Survived", awardSub: "0 injuries, 1 missing passport", desc: "The groomsmen attempt sophistication abroad. They fail. A spreadsheet was made. The spreadsheet was abandoned by hour 3.", cast: ["The Groom","The Best Men"], genres: ["Comedy","Travel"], image: 'images/t04.jpg' },
