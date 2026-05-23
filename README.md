@@ -43,6 +43,10 @@ The green screen (`#00B140` by default) is where real footage goes. In After Eff
 
 A companion `editor.html` lets non-technical users edit all trailer metadata — titles, descriptions, cast, tags, awards — through a form UI with validation, then export a ready-to-use `data.js` + any dropped poster images as a ZIP.
 
+- **Featured Trailer** dropdown at the top picks the hero banner shown on the home screen.
+- Image drop zones render at **16:9** to match the on-screen tiles.
+- Hebrew / RTL content is supported in both the editor inputs and the rendered app — each text block detects direction from its first strong character.
+
 ## Tech
 
 No framework overhead. No bundler. Just the browser doing what browsers do.
@@ -52,7 +56,7 @@ No framework overhead. No bundler. Just the browser doing what browsers do.
 | **UI** | React 18 via CDN — JSX transpiled in-browser by Babel standalone |
 | **Styling** | CSS custom properties, no preprocessor |
 | **Poster art** | Procedurally generated per trailer ID — no image assets needed |
-| **Fonts** | Anton + Helvetica Neue via Google Fonts |
+| **Fonts** | Anton + Heebo (Hebrew) + Helvetica Neue via Google Fonts |
 | **Distribution** | Drop the folder anywhere, open `index.html` |
 
 ## Quick Start
