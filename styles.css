@@ -15,8 +15,18 @@
   --green-screen: #00B140;
   --border: rgba(255,255,255,0.08);
   --shadow-card: 0 12px 32px rgba(0,0,0,0.7);
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-display: "Anton", "Helvetica Neue", Helvetica, sans-serif;
+  --font-sans: "Helvetica Neue", "Heebo", Helvetica, Arial, sans-serif;
+  --font-display: "Anton", "Bebas Neue", "Heebo", "Helvetica Neue", Helvetica, sans-serif;
+}
+
+/* Hebrew / RTL: per-block direction based on first strong char */
+h1, h2, h3, h4, h5, p,
+.tile-art-title, .hero-title, .hud-title,
+.row-title, .hover-card-meta, .hover-card-tags,
+.detail-desc, .hero-desc, .section-title,
+.profile-name, .award-name, .award-sub,
+.un-body h4, .un-body p, .un-body small {
+  unicode-bidi: plaintext;
 }
 
 * { box-sizing: border-box; }

@@ -6,7 +6,7 @@
 <title>Wedflix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Heebo:wght@400;600;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -758,7 +758,6 @@ function Row({ row, onTileClick, onTileHover, onTileLeave, brand }) {
 function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, toggleMyList, onMouseEnter, onAutoPlay }) {
   const cardRef = useRef(null);
   const [pos, setPos] = useState(null);
-  const [previewing, setPreviewing] = useState(false);
   useEffect(() => {
     if (!rect) return;
     const cardW = 360;
@@ -769,17 +768,6 @@ function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, to
     setPos({ left, top });
   }, [rect]);
 
-  useEffect(() => {
-    const previewTimer = setTimeout(() => setPreviewing(true), 2000);
-    return () => clearTimeout(previewTimer);
-  }, [trailer.id]);
-
-  useEffect(() => {
-    if (!previewing || !onAutoPlay) return;
-    const expandTimer = setTimeout(() => onAutoPlay(), 3000);
-    return () => clearTimeout(expandTimer);
-  }, [previewing, onAutoPlay]);
-
   if (!rect || !pos) return null;
   return (
     <div
@@ -789,12 +777,8 @@ function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, to
       onMouseEnter={onMouseEnter}
       onMouseLeave={onClose}
     >
-      <div className={`hover-card-art${previewing ? ' preview' : ''}`} style={{ overflow: 'hidden' }}>
-        {previewing
-          ? <div className="hover-card-preview">
-              <div className="hover-card-preview-title">{trailer.title}</div>
-            </div>
-          : <TileArt trailer={trailer} brand={brand} />}
+      <div className="hover-card-art" style={{ overflow: 'hidden' }}>
+        <TileArt trailer={trailer} brand={brand} />
       </div>
       <div className="hover-card-body">
         <div className="hover-card-actions">
@@ -1044,13 +1028,7 @@ function PlaybackScreen({ trailerId, navTo, brand, hudVariant, greenColor, hudOp
 
   return (
     <div className={`playback ${showHud ? 'show-hud' : ''}`} onMouseMove={bumpHud} onClick={(e) => { if (e.target.classList.contains('playback') || e.target.classList.contains('playback-greenscreen')) setPlaying((p) => !p); }}>
-      <div className="playback-greenscreen" style={{ background: greenColor }}>
-        <div className="gs-label">
-          <div className="gs-title">[ GREEN SCREEN ]</div>
-          <div>Replace with footage: {t.title}</div>
-          <div style={{ marginTop: 8, fontSize: 11, opacity: 0.6 }}>Chroma key {greenColor} · {totalSec}s runtime</div>
-        </div>
-      </div>
+      <div className="playback-greenscreen" style={{ background: greenColor }} />
 
       <div className="playback-hud">
         <div className="hud-top">
@@ -1150,7 +1128,7 @@ const WEDFLIX_DEFAULTS = /*EDITMODE-BEGIN*/{
   "brandText": "WEDFLIX",
   "green": "#00B140",
   "hudVariant": "standard",
-  "heroId": "t02",
+  "heroId": (window.WEDFLIX_DATA && window.WEDFLIX_DATA.featuredId) || "t01",
   "showHudTags": true
 }/*EDITMODE-END*/;
 

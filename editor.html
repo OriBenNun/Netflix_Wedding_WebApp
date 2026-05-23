@@ -8,10 +8,12 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="data.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: #e5e5e5; min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Heebo', sans-serif; background: #0f0f0f; color: #e5e5e5; min-height: 100vh; }
+    input[type=text], textarea { unicode-bidi: plaintext; }
     .editor-header { background: #141414; border-bottom: 1px solid #333; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
     .editor-header h1 { font-size: 20px; font-weight: 700; color: #e50914; letter-spacing: 0.05em; }
     .editor-header .instructions { font-size: 12px; color: #999; max-width: 500px; line-height: 1.5; }
@@ -50,7 +52,7 @@
     }
 
     function serializeData(state) {
-      const { trailers, rows, profiles, imageFiles } = state;
+      const { trailers, rows, profiles, imageFiles, featuredId } = state;
 
       const trailersJs = trailers.map(t => {
         const hasImage = imageFiles[t.id] || t.image;
@@ -83,7 +85,8 @@
     return \`linear-gradient(135deg, oklch(0.35 0.18 \${h}) 0%, oklch(0.18 0.12 \${h2}) 100%)\`;
   },`;
 
-      return `// Wedflix trailer data — edit via editor.html, then export ZIP.\n// Edit titles/descriptions/tags to match the actual filmed trailers.\n\nwindow.WEDFLIX_DATA = {\n  profiles: [\n${profilesJs}\n  ],\n\n  trailers: [\n${trailersJs}\n  ],\n\n  rows: [\n${rowsJs}\n  ],\n\n  // Procedurally generated tile gradient — fallback when no image is set.\n${gradientFn}\n};\n`;
+      const featuredLine = featuredId ? `  featuredId: ${JSON.stringify(featuredId)},\n\n` : '';
+      return `// Wedflix trailer data — edit via editor.html, then export ZIP.\n// Edit titles/descriptions/tags to match the actual filmed trailers.\n\nwindow.WEDFLIX_DATA = {\n${featuredLine}  profiles: [\n${profilesJs}\n  ],\n\n  trailers: [\n${trailersJs}\n  ],\n\n  rows: [\n${rowsJs}\n  ],\n\n  // Procedurally generated tile gradient — fallback when no image is set.\n${gradientFn}\n};\n`;
     }
 
     function validate(state) {
@@ -98,9 +101,27 @@
       return errors;
     }
 
+    function validateGeneratedJs(js) {
+      try {
+        const sandbox = {};
+        new Function('window', js)(sandbox);
+        const data = sandbox.WEDFLIX_DATA;
+        if (!data) return 'WEDFLIX_DATA not defined in generated data.js';
+        if (!Array.isArray(data.trailers) || !data.trailers.length) return 'trailers array missing in generated data.js';
+        if (!Array.isArray(data.profiles)) return 'profiles array missing in generated data.js';
+        if (!Array.isArray(data.rows)) return 'rows array missing in generated data.js';
+        return null;
+      } catch(e) {
+        return `Generated data.js has a syntax error: ${e.message}`;
+      }
+    }
+
     async function exportZip(state) {
+      const js = serializeData(state);
+      const genError = validateGeneratedJs(js);
+      if (genError) throw new Error(genError);
       const zip = new JSZip();
-      zip.file('data.js', serializeData(state));
+      zip.file('data.js', js);
       const imgFolder = zip.folder('images');
       for (const [trailerId, { file }] of Object.entries(state.imageFiles)) {
         imgFolder.file(`${trailerId}.jpg`, file);
@@ -129,6 +150,7 @@
         rows: d.rows.map(r => ({ ...r, ids: [...r.ids] })),
         profiles: d.profiles.map(p => ({ ...p })),
         imageFiles: {},
+        featuredId: d.featuredId || (d.trailers[0] && d.trailers[0].id) || '',
       };
     }
 
@@ -159,7 +181,7 @@
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           style={{
-            width: '100%', aspectRatio: '2/3', background: '#1a1a1a',
+            width: '100%', aspectRatio: '16/9', background: '#1a1a1a',
             border: `2px dashed ${dragging ? '#e50914' : '#444'}`,
             borderRadius: 4, cursor: 'pointer', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
@@ -526,6 +548,17 @@
         <div>
           <div className="editor-header">
             <div><h1>WEDFLIX EDITOR</h1></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 240 }}>
+              <label style={{ marginBottom: 0 }}>Featured Trailer (hero)</label>
+              <select
+                value={state.featuredId || ''}
+                onChange={e => setState(s => ({ ...s, featuredId: e.target.value }))}
+              >
+                {state.trailers.map(t => (
+                  <option key={t.id} value={t.id}>{t.title || t.id}</option>
+                ))}
+              </select>
+            </div>
             <div className="instructions">
               Edit content, then click <strong>Export ZIP</strong>. Unzip: copy <code>data.js</code> into the Netflix_Wedding_WebApp folder, and copy any new images from the <code>images/</code> folder (only newly-dropped images are included in the ZIP).
             </div>
