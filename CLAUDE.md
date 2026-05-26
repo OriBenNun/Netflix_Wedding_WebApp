@@ -40,6 +40,8 @@ Preserved original separate-file architecture used by Claude Design. Do not dele
 
 `screen` state in `App` is one of `'profile' | 'home' | 'detail' | 'playback'`. `navTo(screen, trailerId?)` is passed down as a prop. There is no URL routing.
 
+Scroll handling in `navTo`: leaving `home` stashes `window.scrollY`; navigating to any non-home screen scrolls to top; returning to `home` restores the stashed position.
+
 ## Customizing content
 
 Edit `data.js` (or use `editor.html`):

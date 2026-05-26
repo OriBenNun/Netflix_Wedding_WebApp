@@ -1,82 +1,62 @@
 # Wedflix
 
-> A Netflix-style interactive UI for a wedding video showcase — vibe-coded with [Claude Code](https://claude.ai/code) in under a day.
+A Netflix-style interactive UI for showing wedding videos. Runs as a single static HTML file — open it in a browser and it works.
 
-![Profile picker → home → detail → playback](https://img.shields.io/badge/screens-4-red) ![No build step](https://img.shields.io/badge/build%20step-none-brightgreen) ![React 18 CDN](https://img.shields.io/badge/React-18%20CDN-61dafb)
+## The problem
 
----
+Friends of ours are getting married, and our group wanted to make them a wedding video — a set of funny Netflix-style trailers about their life. The editor in the group asked me if it'd be possible to fake the Netflix interface exactly, so we could embed the trailers inside it like you're browsing a real streaming app.
 
-## The Problem
+Doing that the usual way means rebuilding the whole UI by hand in After Effects — every hover, click, and transition as keyframes — a multi-hour editing session just to mimic an interface.
 
-Some friends asked me to help edit their wedding highlight videos. The plan was to screen them Netflix-style at the reception — full streaming UI, profile picker, category rows, trailer detail pages, the works.
+## The method
 
-The naive approach would have been to **fake all of that interaction inside Adobe After Effects** — animating every button press, hover state, and screen transition by hand. That's hundreds of keyframes for a UI that only needs to work for one night.
+So I suggested a different split of the work. Instead of embedding the actual videos, the app just renders a chroma-key green plate where each trailer plays. That meant I didn't have to vibe-code a real video-streaming app, and it cut about 95% of his editing: he keys out the green in After Effects and drops the finished trailers in.
 
-Instead, I built a real interactive web app, pointed a screen recorder at it, and used the browser as a compositing surface.
+I screen-record a real click-through of the app once. The interface is genuinely interactive — no faked button presses, no keyframed UI.
 
-## The Solution
+## The solution
 
-A fully functional Netflix clone that runs as a **single static HTML file** — no server, no npm, no build step. Open it in a browser and you have a live, clickable UI. Capture it with any screen recorder, then composite the actual video footage in After Effects using the chroma-key green screen the playback screen renders.
+A self-contained Netflix clone: no server, no build step, no dependencies. One folder you can open locally or host anywhere static — this one's on GitHub Pages. A companion editor lets the non-technical people in the group fill in the content without touching code.
 
-**The result:** real interactivity, zero After Effects animation work, and a reusable tool for anyone who wants to do the same thing.
+I built it in under a day, entirely vibe-coded with Claude Code.
 
-## How It Was Built
+## What's in it
 
-This project was **vibe-coded with Claude Code** across a single day. The workflow was conversational: describe a screen, get working JSX back, tweak live in the browser, repeat. The app grew from a blank file to a polished 4-screen experience with a content editor and ZIP export — all without leaving the terminal.
+Four screens, all clickable:
 
-It's a good example of what "AI-assisted development" actually looks like in practice: fast iteration on UI, instant feedback loop (no build = no wait), and the human staying in the director's seat while the model handles the boilerplate.
+- **Profile picker** — who's watching, names and colors come from `data.js`
+- **Home** — hero banner plus scrollable category rows with hover cards
+- **Detail** — video info, match %, awards, cast, "More Like This"
+- **Playback** — chroma-key green plate for the footage, with the full streaming HUD on top (scrubber, controls, Skip Intro, Up Next)
 
-## What It Does
+The green (`#00B140`, changeable) is the only thing that matters for compositing — key it out and the video sits underneath the HUD.
 
-Four screens, fully interactive:
+### Content editor
 
-| Screen | What happens |
-|---|---|
-| **Profile Picker** | Choose who's watching — names and colors pulled from `data.js` |
-| **Home** | Hero banner + horizontally scrollable category rows with hover cards |
-| **Detail** | Trailer info, match %, awards, cast list, "More Like This" |
-| **Playback** | Chroma-key green screen + full streaming HUD (scrubber, controls, Skip Intro, Up Next) |
-
-The green screen (`#00B140` by default) is where real footage goes. In After Effects, key it out and drop the video underneath. The HUD renders on top.
-
-## Content Editor
-
-A companion `editor.html` lets non-technical users edit all trailer metadata — titles, descriptions, cast, tags, awards — through a form UI with validation, then export a ready-to-use `data.js` + any dropped poster images as a ZIP.
-
-- **Featured Trailer** dropdown at the top picks the hero banner shown on the home screen.
-- Image drop zones render at **16:9** to match the on-screen tiles.
-- Hebrew / RTL content is supported in both the editor inputs and the rendered app — each text block detects direction from its first strong character.
+`editor.html` is a form UI for editing all the trailer metadata — titles, descriptions, cast, tags, awards — with validation, then exporting a ready `data.js` plus any poster images you drop in, as a ZIP. There's a dropdown to pick the featured hero, drop zones at 16:9 to match the tiles, and Hebrew/RTL support in both the editor and the app.
 
 ## Tech
 
-No framework overhead. No bundler. Just the browser doing what browsers do.
+- React 18 over CDN, JSX transpiled in the browser by Babel standalone — no bundler
+- Plain CSS with custom properties
+- Poster art generated procedurally per video ID, so there are no image assets to manage
+- Fonts: Anton, Heebo (Hebrew), Helvetica Neue
+- Built with [Claude Code](https://claude.ai/code), hosted on GitHub Pages
 
-| | |
-|---|---|
-| **UI** | React 18 via CDN — JSX transpiled in-browser by Babel standalone |
-| **Styling** | CSS custom properties, no preprocessor |
-| **Poster art** | Procedurally generated per trailer ID — no image assets needed |
-| **Fonts** | Anton + Heebo (Hebrew) + Helvetica Neue via Google Fonts |
-| **Distribution** | Drop the folder anywhere, open `index.html` |
-
-## Quick Start
+## Run it
 
 ```bash
-# Just open the file
+# just open it
 open index.html
 
-# Or with live-reload
+# or with live-reload
 npx serve .
 ```
 
-## After Effects Workflow
+## After Effects workflow
 
-1. Open `index.html`, navigate to a trailer's playback screen
-2. The viewport fills with `#00B140` (chroma-key green) where the video goes
-3. Screen-record the full interactive session
-4. In After Effects: use the recording as the UI layer, key out the green, place real footage underneath
-5. No UI animation. No fake keyframes. Just real interaction captured once.
-
----
-
-*Built for [a real wedding](https://github.com/BmanStudio). Side project. One day. Fully vibe-coded.*
+1. Open `index.html` and go to a video's playback screen
+2. The viewport fills with `#00B140` where the footage goes
+3. Screen-record the full session
+4. In After Effects, key out the green and place the real footage under the UI layer
+5. Done — real interaction, captured once, no UI animation
