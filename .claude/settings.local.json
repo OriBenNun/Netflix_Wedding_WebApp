@@ -31,7 +31,8 @@
       "Bash(Sort-Object Name)",
       "Bash(identify images/t01.jpg)",
       "Bash(node *)",
-      "PowerShell(Set-Content *)"
+      "PowerShell(Set-Content *)",
+      "Bash(npx --no-install playwright --version)"
     ]
   }
 }

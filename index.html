@@ -768,6 +768,13 @@ function HoverCard({ trailer, rect, onClose, onPlay, onMore, brand, inMyList, to
     setPos({ left, top });
   }, [rect]);
 
+  const autoPlayRef = useRef(onAutoPlay);
+  autoPlayRef.current = onAutoPlay;
+  useEffect(() => {
+    const t = setTimeout(() => { if (autoPlayRef.current) autoPlayRef.current(); }, 1500);
+    return () => clearTimeout(t);
+  }, [trailer.id]);
+
   if (!rect || !pos) return null;
   return (
     <div
@@ -848,7 +855,7 @@ function HomeScreen({ profile, navTo, brand, brandText, heroId, myList, toggleMy
     hoverTimerRef.current = setTimeout(() => {
       const rect = el.getBoundingClientRect();
       setHover({ trailer, rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height } });
-    }, 280);
+    }, 300);
   };
   const hideHover = () => {
     clearTimeout(hoverTimerRef.current);
